@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <meta name="description" content="Move geometry. Watch the mathematics change. An interactive shape exploration studio.">
+  <title>Geometry Maths Playground — Explore by moving</title>
+  <link rel="stylesheet" href="./src/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#playground">Skip to playground</a>
+  <div class="app">
+    <header class="topbar">
+      <div class="identity">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <path d="M14 2L26 23H2L14 2Z" stroke="white" stroke-width="1.9" stroke-linejoin="round"/>
+            <circle cx="14" cy="2.5" r="2.2" fill="#B6E4D6"/><circle cx="26" cy="23" r="2.2" fill="#B6E4D6"/><circle cx="2" cy="23" r="2.2" fill="#B6E4D6"/>
+          </svg>
+        </div>
+        <div><div class="brand-name">geometry<span>playground</span></div><div class="brand-subtitle">A living mathematics laboratory</div></div>
+      </div>
+      <div class="header-right"><span class="header-pulse"></span><span>Interactive studio</span><span class="version">v0.1</span></div>
+    </header>
+
+    <main class="workspace">
+      <aside class="panel left-panel" aria-label="Geometry tools">
+        <div class="side-heading">
+          <span class="eyebrow">01 / CREATE</span>
+          <h2>Choose a shape</h2>
+          <p>Pick a starting point, then reshape it by hand.</p>
+        </div>
+        <div class="shape-options" id="shape-options">
+          <button class="shape-option active" type="button" data-preset="triangle" aria-pressed="true"><span class="shape-icon">△</span><span><strong>Triangle</strong><small>3 sides · 3 angles</small></span><span class="chevron">›</span></button>
+          <button class="shape-option" type="button" data-preset="square" aria-pressed="false"><span class="shape-icon">□</span><span><strong>Square</strong><small>Equal sides · right angles</small></span><span class="chevron">›</span></button>
+          <button class="shape-option" type="button" data-preset="rectangle" aria-pressed="false"><span class="shape-icon">▭</span><span><strong>Rectangle</strong><small>Opposite sides equal</small></span><span class="chevron">›</span></button>
+          <button class="shape-option" type="button" data-preset="quadrilateral" aria-pressed="false"><span class="shape-icon">◇</span><span><strong>Quadrilateral</strong><small>4 freely moving corners</small></span><span class="chevron">›</span></button>
+          <button class="shape-option" type="button" data-preset="circle" aria-pressed="false"><span class="shape-icon">◯</span><span><strong>Circle</strong><small>Radius · area · circumference</small></span><span class="chevron">›</span></button>
+          <button class="shape-option" type="button" data-preset="regular" aria-pressed="false"><span class="shape-icon">⬡</span><span><strong>Regular polygon</strong><small>3–10 equal sides to start</small></span><span class="chevron">›</span></button>
+        </div>
+
+        <div class="regular-control">
+          <label class="side-label" for="regular-sides">Regular polygon sides <strong id="sides-value">5</strong></label>
+          <input id="regular-sides" type="range" min="3" max="10" step="1" value="5">
+          <div class="range-labels"><span>3</span><span>10</span></div>
+        </div>
+
+        <div class="side-section">
+          <span class="eyebrow">02 / TRANSFORM</span>
+          <h3>Change its geometry</h3>
+          <div class="transform-grid">
+            <button type="button" class="action-tile" data-transform="rotate-left" title="Rotate 15 degrees anticlockwise"><span>↶</span>Rotate −15°</button>
+            <button type="button" class="action-tile" data-transform="rotate-right" title="Rotate 15 degrees clockwise"><span>↷</span>Rotate +15°</button>
+            <button type="button" class="action-tile" data-transform="shrink"><span>−</span>Scale ×0.9</button>
+            <button type="button" class="action-tile" data-transform="grow"><span>＋</span>Scale ×1.1</button>
+          </div>
+          <button type="button" class="reflect-button" data-transform="reflect"><span>⇄</span> Reflect horizontally</button>
+          <p class="microcopy">Rotate and reflect without changing area. Scaling is different.</p>
+        </div>
+
+        <div class="side-section settings">
+          <span class="eyebrow">03 / DISPLAY</span>
+          <label class="switch-row"><span>Coordinate grid</span><input id="toggle-grid" type="checkbox" checked><span class="switch"></span></label>
+          <label class="switch-row"><span>Side measurements</span><input id="toggle-lengths" type="checkbox" checked><span class="switch"></span></label>
+          <label class="switch-row"><span>Snap to half-units</span><input id="toggle-snap" type="checkbox"><span class="switch"></span></label>
+        </div>
+      </aside>
+
+      <section class="stage" id="playground" aria-label="Interactive geometry workspace">
+        <div class="stage-heading">
+          <div><span class="eyebrow stage-eyebrow"><span class="live-dot"></span> LIVE WORKSPACE</span><h1>Move things. <em>Discover why.</em></h1><p>Drag a coloured point to reshape. Drag inside the shape to move it.</p></div>
+        </div>
+        <div class="canvas-card">
+          <div class="canvas-bar">
+            <div class="canvas-title"><span class="canvas-symbol">✦</span><span id="canvas-shape-title">Triangle</span><span class="mode-pill" id="shape-type">3 vertices</span></div>
+            <div class="toolbar">
+              <button class="toolbar-button" id="randomise" type="button" title="Generate a variation of the current shape">↝ <span>Remix</span></button>
+              <button class="toolbar-button" id="reset" type="button" title="Reset the current shape">↺ <span>Reset</span></button>
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <svg id="geometry-canvas" viewBox="0 0 960 620" role="img" aria-label="Interactive geometric diagram; drag the vertex handles or the interior of the shape." preserveAspectRatio="xMidYMid meet"><text x="480" y="310" text-anchor="middle">Loading geometry...</text></svg>
+          </div>
+          <div class="canvas-bottom">
+            <span class="canvas-hint"><span class="hint-handle"></span> Drag a vertex <span class="hint-sep">·</span> <span class="hint-shape"></span> Drag the shape</span>
+            <span class="canvas-scale">1 grid square = 1 unit</span>
+          </div>
+        </div>
+        <div class="stage-note"><span class="sparkle">✳</span><p><strong>Try this:</strong> <span id="experiment-prompt">Move the top vertex. Can you change the area without changing the base?</span></p></div>
+      </section>
+
+      <aside class="panel right-panel" aria-label="Live mathematical interpretation" aria-live="off">
+        <div class="right-top"><span class="eyebrow">THE MATHEMATICS</span><div class="live-status"><span class="live-dot"></span> Live</div></div>
+        <h2 id="math-shape-title">Triangle</h2>
+        <p class="right-intro" id="math-description">Every movement updates these calculations.</p>
+        <div class="metric-grid" id="metrics" aria-live="polite" aria-atomic="true"></div>
+        <div class="math-section">
+          <div class="section-rule"><span class="eyebrow">UNDER THE HOOD</span><span class="rule"></span></div>
+          <div id="math-explanation"></div>
+        </div>
+        <div class="math-section">
+          <div class="section-rule"><span class="eyebrow">WHAT THIS TELLS US</span><span class="rule"></span></div>
+          <div class="discovery" id="discovery"></div>
+        </div>
+        <button class="copy-button" type="button" id="copy-results">⧉ <span>Copy current measurements</span></button>
+        <p class="rounding-note">Measurements in units and square units; calculations use full precision.</p>
+      </aside>
+    </main>
+    <footer class="footer"><span>Geometry Maths Playground</span><span>Explore visually. Reason mathematically.</span><span>Built for curiosity ✦</span></footer>
+  </div>
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>

@@ -87,7 +87,7 @@ export function mount3D({canvasHost,toolsHost,mathHost}) {
 
   toolsHost.innerHTML='<div class="side-heading"><span class="eyebrow">01 / 3D SOLIDS</span><h2>Choose a solid</h2><p>Reshape in the canvas or enter exact dimensions.</p></div><div class="shape-options three-shape-options" id="solid-picker"></div>'+
     '<div class="side-section"><span class="eyebrow">02 / INTERACT</span><h3>Choose your gesture</h3><div class="three-modes" role="group" aria-label="Interaction mode"></div><p class="microcopy" id="three-mode-hint"></p></div>'+
-    '<div class="side-section" id="vertex-section" hidden><span class="eyebrow">03 / EDIT VERTICES</span><h3>Move an individual corner</h3><p class="vertex-help">Choose a point, then drag its coloured marker. Each corner moves independently; no regular-tetrahedron assumption.</p><label class="three-number-row"><span>Drag plane</span><select id="vertex-plane" aria-label="Vertex dragging plane"><option value="screen">Screen-facing</option><option value="xy">XY · keep Z</option><option value="xz">XZ · keep Y</option><option value="yz">YZ · keep X</option></select></label><label class="three-number-row"><span>Selected point</span><select id="vertex-select" aria-label="Selected vertex"><option value="0">A · vertex 1</option><option value="1">B · vertex 2</option><option value="2">C · vertex 3</option><option value="3">D · vertex 4</option></select></label><div class="three-triple vertex-triple"><label>X<input type="number" data-vertex-coordinate="0" step="0.1"></label><label>Y<input type="number" data-vertex-coordinate="1" step="0.1"></label><label>Z<input type="number" data-vertex-coordinate="2" step="0.1"></label></div><button type="button" class="reflect-button" id="vertex-undo" disabled>↶ Undo point edit</button><p class="vertex-status" id="vertex-status" role="status">A tetrahedron has four genuine movable corners.</p></div>'+
+    '<div class="side-section" id="vertex-section" hidden><span class="eyebrow">03 / EDIT VERTICES</span><h3>Move an individual corner</h3><p class="vertex-help">Choose a point, then drag its coloured marker. Each corner moves independently. X/Y/Z are coordinates within the solid (before rotation and translation).</p><label class="three-number-row"><span>Drag plane</span><select id="vertex-plane" aria-label="Vertex dragging plane"><option value="screen">Screen-facing</option><option value="xy">XY · keep Z</option><option value="xz">XZ · keep Y</option><option value="yz">YZ · keep X</option></select></label><label class="three-number-row"><span>Selected point</span><select id="vertex-select" aria-label="Selected vertex"><option value="0">A · vertex 1</option><option value="1">B · vertex 2</option><option value="2">C · vertex 3</option><option value="3">D · vertex 4</option></select></label><div class="three-triple vertex-triple"><label>X<input type="number" data-vertex-coordinate="0" step="0.1"></label><label>Y<input type="number" data-vertex-coordinate="1" step="0.1"></label><label>Z<input type="number" data-vertex-coordinate="2" step="0.1"></label></div><button type="button" class="reflect-button" id="vertex-undo" disabled>↶ Undo point edit</button><p class="vertex-status" id="vertex-status" role="status">A tetrahedron has four genuine movable corners.</p></div>'+
     '<div class="side-section"><span class="eyebrow">04 / DIMENSIONS</span><div id="solid-dimensions"></div><label class="three-number-row"><span>Uniform scale</span><input type="number" id="solid-scale" min="0.2" max="4" step="0.05" value="1"></label></div>'+
     '<div class="side-section"><span class="eyebrow">05 / POSITION & ROTATION</span><div id="solid-transform-inputs"></div><button type="button" class="reflect-button" id="solid-reset">↺ Reset solid</button></div>'+
     '<div class="side-section settings three-settings"><span class="eyebrow">06 / DISPLAY</span><label class="switch-row"><span>Coordinate grid</span><input id="three-grid" type="checkbox" checked><span class="switch"></span></label><label class="three-number-row"><span>Surface</span><select id="three-view"><option value="solid">Solid</option><option value="transparent">Transparent</option><option value="wireframe">Wireframe</option></select></label></div>';
@@ -123,7 +123,7 @@ export function mount3D({canvasHost,toolsHost,mathHost}) {
     repaint();
   }
   function dimensionControls(){
-    dimensions.innerHTML=SOLIDS[s.type].fields.map(field=>'<label class="three-dimension"><span>'+field+'</span><input type="range" data-dimension="'+field+'" min="0.35" max="8" step="0.05" value="'+s.params[field]+'"><input type="number" data-number-dimension="'+field+'" aria-label="'+field+'" min="0.35" max="8" step="0.05" value="'+s.params[field]+'"></label>').join('');
+    dimensions.innerHTML=SOLIDS[s.type].fields.map(field=>'<label class="three-dimension"><span>'+(s.type==='tetrahedron'?'Regular '+field+' (reset points)':field)+'</span><input type="range" data-dimension="'+field+'" min="0.35" max="8" step="0.05" value="'+s.params[field]+'"><input type="number" data-number-dimension="'+field+'" aria-label="'+field+'" min="0.35" max="8" step="0.05" value="'+s.params[field]+'"></label>').join('');
   }
   function transformControls(){
     toolsHost.querySelector('#solid-transform-inputs').innerHTML=['position','rotation'].map(kind=>{
@@ -184,6 +184,7 @@ export function mount3D({canvasHost,toolsHost,mathHost}) {
   }
   function maths(){
     const m=currentMeasurement();
+    mathHost.querySelector('.right-intro').textContent=s.type==='tetrahedron'?'The measured tetrahedron uses its actual corner coordinates, even after deformation.':'Measurements come from the dimensions used to construct this solid.';
     mathHost.querySelector('#solid-math-title').textContent=m.name;
     const card=(k,v,u,accent)=>'<div class="metric-card'+(accent?' purple':'')+'"><span class="metric-label">'+k+'</span><span class="metric-value">'+v+'<span class="metric-unit">'+u+'</span></span></div>';
     mathHost.querySelector('#solid-metrics').innerHTML=card('Volume',fmt(m.volume),'u³',true)+card('Surface area',fmt(m.surfaceArea),'u²')+
@@ -331,6 +332,7 @@ export function mount3D({canvasHost,toolsHost,mathHost}) {
     if(s.drag?.id!==e.pointerId)return;
     if(e.type==='pointercancel'&&s.mode==='edit'&&s.undoVertices){s.vertices=s.undoVertices;s.undoVertices=null;update();}
     stopDrag();
+    if(s.mode==='edit')renderer.domElement.style.cursor='grab';
   }
   renderer.domElement.addEventListener('pointerdown',down);
   renderer.domElement.addEventListener('pointermove',e=>{

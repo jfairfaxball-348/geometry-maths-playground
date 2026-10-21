@@ -5,9 +5,9 @@ import { measureSolid } from '../src/solids.mjs';
 
 const near = (x,y) => assert.ok(Math.abs(x-y) < 1e-9, x+' != '+y);
 function touches(a,b) {
-  const l=a.x-a.width/2,r=a.x+a.width/2,t=a.y+a.height/2,b=a.y-a.height/2;
+  const l=a.x-a.width/2,r=a.x+a.width/2,t=a.y+a.height/2,bottom=a.y-a.height/2;
   const L=b.x-b.width/2,R=b.x+b.width/2,T=b.y+b.height/2,B=b.y-b.height/2;
-  return Math.max(0,Math.min(r,R)-Math.max(l,L)) * Math.max(0,Math.min(t,T)-Math.max(b,B));
+  return Math.max(0,Math.min(r,R)-Math.max(l,L)) * Math.max(0,Math.min(t,T)-Math.max(bottom,B));
 }
 
 test('cube unfolds into six equal, connected, nonoverlapping square faces', () => {

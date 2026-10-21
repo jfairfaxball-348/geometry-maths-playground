@@ -22,7 +22,7 @@ Build a friendly visual maths playground, not a static collection of diagrams. S
 - Drag dimension handles in **Resize** mode; stretching a cube along one axis converts it to a cuboid. Use **Move**, **Rotate** and **Scale** for object transforms, or enter exact dimensions and coordinates.
 - See accurate analytic volume, surface area, face/edge/vertex counts on polyhedra, relevant formula substitutions and dynamic scaling/invariant observations.
 - Geometry calculations live in `src/solids.mjs`; rendering in `src/three-workspace.js` and pure editable-tetrahedron maths in `src/tetra-vertices.mjs`. Euler's V − E + F = 2 applies to the five convex polyhedra, not smooth shapes.
-- Three.js is lazily imported via a pinned external CDN import map when the 3D tab is opened. **3D requires an internet connection to load the library;** 2D works with local files. WebGL must be enabled in the browser.
+- Three.js is lazily imported via a pinned external CDN import map when the 3D tab is opened. **3D does not require a third-party CDN;** it uses locally hosted Three.js modules. An initial site load still requires network access. WebGL must be enabled in the browser.
 
 ## S003 — Direct tetrahedron corner editing and independent tools scrolling
 
@@ -35,8 +35,9 @@ Build a friendly visual maths playground, not a static collection of diagrams. S
 
 ## Run locally
 
-Requires Node.js 20 or later. There are no npm install or build dependencies. The 3D workspace loads Three.js from a pinned CDN in the browser.
+Requires Node.js 20 or later. There are no npm install or build dependencies. The static build vendors the pinned Three.js npm dependency, so the browser loads it from the same host.
 
+    npm install
     npm run dev
 
 Visit http://localhost:5173.

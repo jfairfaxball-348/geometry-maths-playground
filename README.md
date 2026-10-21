@@ -22,7 +22,7 @@ Build a friendly visual maths playground, not a static collection of diagrams. S
 - Drag dimension handles in **Resize** mode; stretching a cube along one axis converts it to a cuboid. Use **Move**, **Rotate** and **Scale** for object transforms, or enter exact dimensions and coordinates.
 - See accurate analytic volume, surface area, face/edge/vertex counts on polyhedra, relevant formula substitutions and dynamic scaling/invariant observations.
 - Geometry calculations live in `src/solids.mjs`; rendering in `src/three-workspace.js` and pure editable-tetrahedron maths in `src/tetra-vertices.mjs`. Euler's V − E + F = 2 applies to the five convex polyhedra, not smooth shapes.
-- Three.js is lazily imported via a pinned external CDN import map when the 3D tab is opened. **3D does not require a third-party CDN;** it uses locally hosted Three.js modules. An initial site load still requires network access. WebGL must be enabled in the browser.
+- Three.js is lazily imported from locally hosted, version-pinned Three.js modules when the 3D tab is opened. **No third-party CDN is required.** An initial site load still requires network access. WebGL must be enabled in the browser.
 
 ## S003 — Direct tetrahedron corner editing and independent tools scrolling
 
@@ -31,11 +31,20 @@ Build a friendly visual maths playground, not a static collection of diagrams. S
 - The tetrahedron's actual vertex positions drive the rendered triangles, six edge lengths, four face areas, surface area and determinant volume. Collapsed and inverted solids are rejected.
 - The point-editing mode is intentionally available only for tetrahedra; cubes, prisms, pyramids and curved solids keep their existing dimension handles. Changing the tetrahedron's regular side input resets its four vertices.
 - Undo the last point edit, or reset the solid for the canonical regular tetrahedron.
-- Full slicing planes, nets and Cavalieri experiments remain planned; see S004.
+- Cutting planes and Cavalieri experiments remain planned; animated box nets are delivered in S004.
+
+## S004 — Animated 3D folding nets and live 2D surface area
+
+- Select **3D laboratory → Cube/Cuboid → Unfold net**. Use the **Unfold** and **Fold** buttons or scrub the progress slider. Orbit the solid freely at every stage.
+- Six real planar face meshes rotate around **five connected hinges**: the front face stays fixed while the back face hinges from the top face. Fully unfolded, all six rectangles form one connected nonoverlapping planar cross.
+- The right maths panel shows a colour-matched 2D net, six selectable face areas, and their exact sum. Clicking a face row highlights that same face on the 3D model.
+- Changing cube/cuboid dimensions or uniform scale rebuilds the net and recalculates the face areas. The preserved invariant is **surface area**, not enclosed volume during unfolding.
+- Pure maths is in `src/box-nets.mjs`; hinge rendering is in `src/folding-box.js`; automated tests verify nonoverlap, edge joins, face pairs, scaling and equality with the solid’s surface area.
+- The **Unfold net** option is intentionally limited to **cube and cuboid** for S004. Nets for tetrahedra, pyramids and prisms are possible next; curved surfaces require fundamentally different methods.
 
 ## Run locally
 
-Requires Node.js 20 or later. There are no npm install or build dependencies. The static build vendors the pinned Three.js npm dependency, so the browser loads it from the same host.
+Requires Node.js 20 or later. Install the pinned Three.js dependency before running or building; the static build copies the required modules to the same origin as the application.
 
     npm install
     npm run dev
@@ -57,7 +66,8 @@ Import the GitHub repository jfairfaxball-348/geometry-maths-playground into Ver
 - **S001:** Preserved interactive 2D shapes and live measurements.
 - **S002:** 3D solids, gesture modes, dimensional editing, and formula-driven live measurements.
 - **S003:** Independently scrollable desktop tools and mathematically valid independent tetrahedron vertex editing.
-- **S004:** Genuine cross-sections, unfolded nets, Cavalieri experiments and further editable polyhedra (see [S004 brief](docs/NEXT_SESSION_S004.md)).
+- **S004:** Actual hinged 3D folding/unfolding for cubes and cuboids, 2D net diagram, live individual face and total area invariants.
+- **S005:** Expand nets to tetrahedra, square pyramids and triangular prisms, or develop slicing and Cavalieri experiments (see [S005 brief](docs/NEXT_SESSION_S005.md)).
 - **Later:** Constraints, intersections, construction tools, linked algebra, loci, conics, and free-vertex polyhedral geometry.
 
 ## Mathematical conventions

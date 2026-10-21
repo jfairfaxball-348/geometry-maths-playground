@@ -1,0 +1,16 @@
+{
+  "name": "geometry-maths-playground",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Interactive geometry and live mathematical exploration",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "check": "node --check src/app.js && node --check src/geometry.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -128,6 +128,8 @@ export function mount3D({canvasHost,toolsHost,mathHost}) {
     const [w,h,d]=boxDimensions(s.type,s.params,s.scale);
     const span=Math.max(w+2*d,2*h+2*d);
     const distance=Math.max(10,span*1.8);
+    orbit.maxDistance=Math.max(30,distance*2);
+    camera.far=Math.max(100,distance*4);camera.updateProjectionMatrix();
     camera.position.set(distance*.18,distance*.24,distance*.95);
     orbit.target.set(0,0,0);orbit.update();repaint();
   }

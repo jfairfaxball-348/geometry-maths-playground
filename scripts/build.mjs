@@ -5,7 +5,7 @@ const output='dist';
 rmSync(output,{recursive:true,force:true});
 mkdirSync(join(output,'src'),{recursive:true});
 copyFileSync('index.html',join(output,'index.html'));
-for(const file of ['app.js','geometry.mjs','styles.css','workspace-switch.js','three-workspace.js','solids.mjs','tetra-vertices.mjs','three.css'])
+for(const file of ['app.js','geometry.mjs','styles.css','workspace-switch.js','three-workspace.js','solids.mjs','tetra-vertices.mjs','box-nets.mjs','folding-box.js','three.css'])
   copyFileSync(join('src',file),join(output,'src',file));
 
 // Bundle the minimal transitive Three.js module graph as local static files.

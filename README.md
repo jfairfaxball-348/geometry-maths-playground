@@ -14,9 +14,19 @@ Build a friendly visual maths playground, not a static collection of diagrams. S
 - Experiment with rotations, reflections and scale to observe invariants.
 - Responsive interface suitable for mouse and touch; no account, backend or API key.
 
+## S002 — Interactive 3D laboratory
+
+- Switch between the preserved S001 SVG 2D playground and a Three.js 3D workspace.
+- Orbit, pan, zoom and reset a perspective camera; optional axes/grid and solid, transparent and wireframe views.
+- Explore cube, cuboid, sphere, cylinder, cone, tetrahedron, square pyramid and equilateral triangular prism.
+- Drag dimension handles in **Resize** mode; stretching a cube along one axis converts it to a cuboid. Use **Move**, **Rotate** and **Scale** for object transforms, or enter exact dimensions and coordinates.
+- See accurate analytic volume, surface area, face/edge/vertex counts on polyhedra, relevant formula substitutions and dynamic scaling/invariant observations.
+- Geometry calculations live in `src/solids.mjs`; rendering in `src/three-workspace.js`. Euler's V − E + F = 2 applies to the five convex polyhedra, not smooth shapes.
+- Three.js is lazily imported via a pinned external CDN import map when the 3D tab is opened. **3D requires an internet connection to load the library;** 2D works with local files. WebGL must be enabled in the browser.
+
 ## Run locally
 
-Requires Node.js 20 or later. There are no third-party runtime or build dependencies.
+Requires Node.js 20 or later. There are no npm install or build dependencies. The 3D workspace loads Three.js from a pinned CDN in the browser.
 
     npm run dev
 
@@ -34,12 +44,10 @@ Import the GitHub repository jfairfaxball-348/geometry-maths-playground into Ver
 
 ## Roadmap
 
-- **S001:** Interactive shape editor and trustworthy live measurements.
-- **S002:** Construction tools (points, segments, constraints, intersections), undo/redo, named workspaces.
-- **S003:** Triangle investigations (centroids, incentres, circumcentres, medians, perpendicular bisectors).
-- **S004:** Circle investigations (chords, tangents, angles, cyclic quadrilaterals).
-- **S005:** Linked algebra/geometry views, transformations, proofs and export/import of examples.
-- **Later:** 3D solids, loci, conics, tessellations and other mathematical structures.
+- **S001:** Preserved interactive 2D shapes and live measurements.
+- **S002:** 3D solids, gesture modes, dimensional editing, and formula-driven live measurements.
+- **S003:** Cross-sections, unfolded nets, Cavalieri experiments, and deeper 3D invariants (see [S003 brief](docs/NEXT_SESSION_S003.md)).
+- **Later:** Constraints, intersections, construction tools, linked algebra, loci, conics, and free-vertex polyhedral geometry.
 
 ## Mathematical conventions
 

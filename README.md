@@ -21,8 +21,17 @@ Build a friendly visual maths playground, not a static collection of diagrams. S
 - Explore cube, cuboid, sphere, cylinder, cone, tetrahedron, square pyramid and equilateral triangular prism.
 - Drag dimension handles in **Resize** mode; stretching a cube along one axis converts it to a cuboid. Use **Move**, **Rotate** and **Scale** for object transforms, or enter exact dimensions and coordinates.
 - See accurate analytic volume, surface area, face/edge/vertex counts on polyhedra, relevant formula substitutions and dynamic scaling/invariant observations.
-- Geometry calculations live in `src/solids.mjs`; rendering in `src/three-workspace.js`. Euler's V − E + F = 2 applies to the five convex polyhedra, not smooth shapes.
+- Geometry calculations live in `src/solids.mjs`; rendering in `src/three-workspace.js` and pure editable-tetrahedron maths in `src/tetra-vertices.mjs`. Euler's V − E + F = 2 applies to the five convex polyhedra, not smooth shapes.
 - Three.js is lazily imported via a pinned external CDN import map when the 3D tab is opened. **3D requires an internet connection to load the library;** 2D works with local files. WebGL must be enabled in the browser.
+
+## S003 — Direct tetrahedron corner editing and independent tools scrolling
+
+- On desktop, the left tools column scrolls by itself without moving the middle geometry workspace or right mathematics panel. On smaller screens normal stacked scrolling is preserved.
+- In 3D, choose **Tetrahedron → Edit points**. Drag any of the four coloured vertex markers independently. Use a screen-facing drag plane or XY/XZ/YZ for depth control, plus numerical object-local X/Y/Z coordinate inputs.
+- The tetrahedron's actual vertex positions drive the rendered triangles, six edge lengths, four face areas, surface area and determinant volume. Collapsed and inverted solids are rejected.
+- The point-editing mode is intentionally available only for tetrahedra; cubes, prisms, pyramids and curved solids keep their existing dimension handles. Changing the tetrahedron's regular side input resets its four vertices.
+- Undo the last point edit, or reset the solid for the canonical regular tetrahedron.
+- Full slicing planes, nets and Cavalieri experiments remain planned; see S004.
 
 ## Run locally
 
@@ -46,7 +55,8 @@ Import the GitHub repository jfairfaxball-348/geometry-maths-playground into Ver
 
 - **S001:** Preserved interactive 2D shapes and live measurements.
 - **S002:** 3D solids, gesture modes, dimensional editing, and formula-driven live measurements.
-- **S003:** Cross-sections, unfolded nets, Cavalieri experiments, and deeper 3D invariants (see [S003 brief](docs/NEXT_SESSION_S003.md)).
+- **S003:** Independently scrollable desktop tools and mathematically valid independent tetrahedron vertex editing.
+- **S004:** Genuine cross-sections, unfolded nets, Cavalieri experiments and further editable polyhedra (see [S004 brief](docs/NEXT_SESSION_S004.md)).
 - **Later:** Constraints, intersections, construction tools, linked algebra, loci, conics, and free-vertex polyhedral geometry.
 
 ## Mathematical conventions

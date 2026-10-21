@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "build": "node scripts/build.mjs",
-    "check": "node --check src/app.js && node --check src/geometry.mjs && node --check src/solids.mjs && node --check src/three-workspace.js && node --check src/workspace-switch.js",
+    "check": "node --check src/app.js && node --check src/geometry.mjs && node --check src/solids.mjs && node --check src/three-workspace.js && node --check src/tetra-vertices.mjs && node --check src/workspace-switch.js",
     "test": "node --test"
   },
   "engines": {

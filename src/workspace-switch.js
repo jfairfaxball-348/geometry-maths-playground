@@ -71,6 +71,17 @@ header.addEventListener('click', async event => {
     three.setActive(active === '3d');
   } catch (err) {
     console.error('3D laboratory failed to initialise', err);
-    stage3d.innerHTML = '<div class="three-loading" role="alert">The 3D renderer could not load. Check your network connection and WebGL support, then return to 2D or retry.</div>';
+    const detail = err instanceof Error ? err.message : String(err);
+    const failure = document.createElement('div');
+    failure.className = 'three-loading';
+    failure.setAttribute('role', 'alert');
+    const title = document.createElement('strong');
+    title.textContent = 'Unable to initialise the 3D laboratory.';
+    const explanation = document.createElement('p');
+    explanation.textContent = detail;
+    const hint = document.createElement('p');
+    hint.textContent = 'Switch to 2D and back to retry. If it persists, the error above identifies what failed.';
+    failure.append(title, explanation, hint);
+    stage3d.replaceChildren(failure);
   } finally { initialising = false; }
 });

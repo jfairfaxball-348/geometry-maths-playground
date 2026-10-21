@@ -24,7 +24,7 @@ const fmt = (number, digits = 2) => Number.isFinite(number) ?
 const roundPx = n => Math.round(n * 10) / 10;
 const coordinate = n => Math.round(n / 20) * 20;
 const snapPoint = point => state.snap ?
-  { x: coordinate(point.x), y: coordinate(point.y) } : point;
+  { x: coordinate(point.x), y: 310 + coordinate(point.y - 310) } : point;
 const pointString = p => roundPx(p.x) + ',' + roundPx(p.y);
 const coordDisplay = p => '(' + fmt((p.x - 480) / UNIT, 1) + ', ' + fmt((310 - p.y) / UNIT, 1) + ')';
 
@@ -55,8 +55,8 @@ function handle(x, y, dataAttribute, primary = true) {
 function renderDiagram() {
   const parts = [
     '<defs>',
-    '<pattern id="minor" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="#eef1f8" stroke-width="1"/></pattern>',
-    '<pattern id="major" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#dce2f0" stroke-width="1.3"/></pattern>',
+    '<pattern id="minor" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="translate(0 10)"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="#eef1f8" stroke-width="1"/></pattern>',
+    '<pattern id="major" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="translate(0 30)"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#dce2f0" stroke-width="1.3"/></pattern>',
     '<linearGradient id="shapeFill" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7e82ea" stop-opacity=".23"/><stop offset="100%" stop-color="#747bdc" stop-opacity=".10"/></linearGradient>',
     '</defs>',
     '<rect width="' + WIDTH + '" height="' + HEIGHT + '" fill="#fcfdff"/>'
@@ -72,7 +72,7 @@ function renderDiagram() {
     parts.push(
       '<circle class="shape-body" data-drag="shape" cx="' + roundPx(centre.x) + '" cy="' + roundPx(centre.y) +
         '" r="' + roundPx(radius) + '" fill="url(#shapeFill)" stroke="#777bea" stroke-width="3.5"/>',
-      '<line x1="' + roundPx(centre.x) + '" y1="' + roundPx(centre.y) + '" x2="' +
+      '<line pointer-events="none" x1="' + roundPx(centre.x) + '" y1="' + roundPx(centre.y) + '" x2="' +
         roundPx(centre.x + radius) + '" y2="' + roundPx(centre.y) + '" stroke="#6d74db" stroke-width="2.5" stroke-dasharray="7 5"/>',
       '<circle cx="' + roundPx(centre.x) + '" cy="' + roundPx(centre.y) + '" r="5" fill="#5e67ce" data-drag="shape"/>',
       svgLabel(centre.x + radius / 2, centre.y - 19, 'r = ' + fmt(radius / UNIT), '#595ec1', 15),
@@ -92,7 +92,7 @@ function renderDiagram() {
         const dx = mx - centroid.x, dy = my - centroid.y;
         const d = Math.hypot(dx, dy) || 1;
         parts.push(
-          '<rect x="' + roundPx(mx + 17 * dx / d - 26) + '" y="' +
+          '<rect pointer-events="none" x="' + roundPx(mx + 17 * dx / d - 26) + '" y="' +
             roundPx(my + 17 * dy / d - 12) + '" rx="7" width="52" height="24" fill="white" opacity=".93"/>',
           svgLabel(mx + 17 * dx / d, my + 17 * dy / d, fmt(geometry.lengths[i]), '#5a649e', 13)
         );

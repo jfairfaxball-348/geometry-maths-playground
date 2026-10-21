@@ -60,3 +60,46 @@
   .three-modes { grid-template-columns: repeat(3,minmax(0,1fr)); }
   #vertex-section { padding-left: 10px; }
 }
+
+
+/* S004 — six-face folding lab. Same surfaces in 3D and in the 2D net. */
+#net-section { border-left: 3px solid #777be9; padding-left: 12px; }
+.net-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 14px; }
+.net-actions button {
+  border: 1px solid #c5caf5; background: #eef0ff; color: #5157c3;
+  padding: 11px 5px; border-radius: 9px; font-size: 11px; font-weight: 800;
+}
+.net-actions button:hover, .net-actions button:focus-visible { background: #dee1ff; }
+.net-slider-label { margin-top: 19px; gap: 6px; }
+.net-slider-label strong { font-size: 9px; white-space: nowrap; }
+#net-slider { accent-color: #666be0; }
+.net-math { margin: 23px 0 12px; padding-bottom: 22px; border-bottom: 1px solid #e7ebf3; }
+.net-lead { font-size: 11px; line-height: 1.65; color: #818ca5; margin: 12px 0; }
+.net-lead strong { color: #414d6c; }
+.net-preview {
+  display: flex; align-items: center; justify-content: center; margin: 13px 0 16px;
+  min-height: 190px; padding: 12px;
+  border-radius: 12px; border: 1px solid #e1e6f2;
+  background: radial-gradient(ellipse at center,#f7f7ff 0,#fff 78%);
+}
+.net-preview svg { width: 100%; max-height: 290px; overflow: visible; }
+.net-faces { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 5px; }
+.net-face-row {
+  display: grid; grid-template-columns: 10px minmax(0,1fr);
+  align-items: center; text-align: left; gap: 6px; padding: 8px 7px;
+  border: 1px solid #e4e8f2; background: white; border-radius: 8px;
+  color: #53617e; font-size: 10px;
+}
+.net-face-row strong { grid-column: 2; font-size: 10px; }
+.net-face-row:hover { background: #f7f8ff; }
+.net-face-row.chosen { background: #f1f2ff; border-color: #afb7ee; }
+.net-face-dot { width: 10px; height: 10px; border-radius: 3px; }
+.net-equation {
+  margin-top: 15px; padding: 13px; border-radius: 10px;
+  background: #f3f4ff; color: #5660a3; line-height: 1.6;
+}
+.net-equation span { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; }
+.net-equation strong { display: block; margin: 6px 0; font-size: 11px; overflow-wrap: anywhere; }
+.net-equation small { display: block; color: #497c6c; font-size: 10px; }
+@media (max-width: 1070px) { #three-math > .net-math { grid-column: 1 / -1; } }
+@media (max-width: 750px) { .net-math { max-width: 520px; } .net-preview svg { max-height: 340px; } }

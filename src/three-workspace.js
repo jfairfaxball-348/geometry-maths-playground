@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { SOLIDS, initialSolid, limitDimension, measureSolid, transformObservation } from './solids.mjs';
 import { TETRA_FACES, canonicalTetrahedron, measureTetraVertices, withMovedVertex } from './tetra-vertices.mjs';
+import { boxNet, boxDimensions, supportsBoxNet, netMatchesSurfaceArea } from './box-nets.mjs';
+import { createFoldingBox } from './folding-box.js';
 
 const fmt = n => Number(n.toFixed(2)).toLocaleString('en-GB', { maximumFractionDigits: 2 });
 const axis = { x: new THREE.Vector3(1,0,0), y: new THREE.Vector3(0,1,0), z: new THREE.Vector3(0,0,1) };
@@ -15,6 +17,20 @@ function poly(vertices, faces) {
   g.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
   g.computeVertexNormals();
   return g;
+}
+function netPreviewSvg(net) {
+  // SVG Y points down; net geometry Y points up. Flip the vertical coordinates.
+  const {minX,maxX,minY,maxY}=net.bounds;
+  const margin=Math.max(maxX-minX,maxY-minY)*.045;
+  const box=[minX-margin,-maxY-margin,maxX-minX+margin*2,maxY-minY+margin*2].join(' ');
+  const faces=net.faces.map(face=>{
+    const x=face.x-face.width/2,y=-face.y-face.height/2;
+    const font=Math.min(face.width,face.height)*.17;
+    return '<g><rect x="'+x+'" y="'+y+'" width="'+face.width+'" height="'+face.height+
+      '" rx=".02" fill="'+face.color+'" fill-opacity=".82" stroke="#364269" stroke-width=".035"/>'+
+      '<text x="'+face.x+'" y="'+(-face.y)+'" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="'+font+'" font-weight="700">'+face.label+'</text></g>';
+  }).join('');
+  return '<svg viewBox="'+box+'" role="img" aria-label="Six connected nonoverlapping rectangles: an exact flat net of this solid" preserveAspectRatio="xMidYMid meet">'+faces+'</svg>';
 }
 function triangle(a,y) {
   const r=a/Math.sqrt(3);
@@ -70,56 +86,99 @@ export function mount3D({canvasHost,toolsHost,mathHost}) {
   const grid=new THREE.GridHelper(10,20,0xc3ccdf,0xe7eaf3);grid.position.y=-2.3;scene.add(grid);
   const axes=new THREE.AxesHelper(4.7);scene.add(axes);
   const object=new THREE.Group();scene.add(object);
-  const s={...initialSolid('cube'),mode:'orbit',view:'solid',active:false,drag:null,vertices:null,selectedVertex:0,vertexPlane:'screen',undoVertices:null,observation:'Resize a cube on one axis to turn it into a cuboid.'};
+  const s={...initialSolid('cube'),mode:'orbit',view:'solid',active:false,drag:null,vertices:null,selectedVertex:0,vertexPlane:'screen',undoVertices:null,netProgress:0,netFace:'front',observation:'Resize a cube on one axis to turn it into a cuboid.'};
   const currentMeasurement=()=>s.type==='tetrahedron'&&s.vertices?measureTetraVertices(s.vertices,s.scale):measureSolid(s.type,s.params,s.scale);
   function stopDrag(){
     if(s.drag && renderer.domElement.hasPointerCapture(s.drag.id))renderer.domElement.releasePointerCapture(s.drag.id);
     s.drag=null;
   }
-  let solid=null,edges=null,handles=[],frame=0;
+  let solid=null,edges=null,handles=[],netAssembly=null,netAnimation=0,frame=0;
   const ray=new THREE.Raycaster(), mouse=new THREE.Vector2(), plane=new THREE.Plane(), intersection=new THREE.Vector3();
   function repaint(){if(!s.active||frame)return;frame=requestAnimationFrame(()=>{frame=0;if(s.active)renderer.render(scene,camera);});}
   function fit(){if(!s.active)return;const w=Math.max(1,canvas.clientWidth),h=Math.max(1,canvas.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();repaint();}
   function cameraReset(){camera.position.set(6,4.5,7);orbit.target.set(0,0,0);orbit.update();repaint();}
+  function stopNetAnimation(){if(netAnimation)cancelAnimationFrame(netAnimation);netAnimation=0;}
+  function setNetProgress(value){
+    s.netProgress=THREE.MathUtils.clamp(value,0,1);
+    netAssembly?.setProgress(s.netProgress);
+    const slider=toolsHost.querySelector('#net-slider');
+    if(slider)slider.value=String(Math.round(s.netProgress*100));
+    const status=toolsHost.querySelector('#net-progress-label');
+    if(status)status.textContent=s.netProgress===0?'Fully folded':s.netProgress===1?'Fully unfolded':Math.round(s.netProgress*100)+'% unfolded';
+    repaint();
+  }
+  function animateNet(target){
+    stopNetAnimation();
+    const start=s.netProgress,finish=THREE.MathUtils.clamp(target,0,1);
+    if(Math.abs(start-finish)<1e-6)return;
+    if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){setNetProgress(finish);return;}
+    const duration=Math.max(240,750*Math.abs(finish-start));
+    let begin=null;
+    function tick(time){
+      if(!s.active||s.mode!=='net'){netAnimation=0;return;}
+      if(begin===null)begin=time;
+      const t=Math.min(1,(time-begin)/duration),ease=t*t*(3-2*t);
+      setNetProgress(start+(finish-start)*ease);
+      if(t<1)netAnimation=requestAnimationFrame(tick);
+      else netAnimation=0;
+    }
+    netAnimation=requestAnimationFrame(tick);
+  }
+  function showNetCamera(){
+    const [w,h,d]=boxDimensions(s.type,s.params,s.scale);
+    const span=Math.max(w+2*d,2*h+2*d);
+    const distance=Math.max(10,span*1.8);
+    camera.position.set(distance*.18,distance*.24,distance*.95);
+    orbit.target.set(0,0,0);orbit.update();repaint();
+  }
   orbit.addEventListener('change',repaint);
   canvasHost.querySelector('#camera-reset').addEventListener('click',cameraReset);
   cameraReset();
 
   toolsHost.innerHTML='<div class="side-heading"><span class="eyebrow">01 / 3D SOLIDS</span><h2>Choose a solid</h2><p>Reshape in the canvas or enter exact dimensions.</p></div><div class="shape-options three-shape-options" id="solid-picker"></div>'+
     '<div class="side-section"><span class="eyebrow">02 / INTERACT</span><h3>Choose your gesture</h3><div class="three-modes" role="group" aria-label="Interaction mode"></div><p class="microcopy" id="three-mode-hint"></p></div>'+
+    '<div class="side-section" id="net-section" hidden><span class="eyebrow">03 / FOLDING LAB</span><h3>Unfold the surface</h3><p class="vertex-help">Six real faces connected by five hinges. Unfold to reveal the flat net, then fold back into the solid.</p><div class="net-actions"><button type="button" id="net-unfold">↗ Unfold</button><button type="button" id="net-fold">↙ Fold</button></div><label class="side-label net-slider-label" for="net-slider">Folding progress <strong id="net-progress-label">Fully folded</strong></label><input id="net-slider" type="range" min="0" max="100" step="1" value="0" aria-label="Fold or unfold the six faces"><p class="microcopy">The coloured 2D net and all six face areas are shown in the right panel. Orbit the 3D model at any stage.</p></div>'+
     '<div class="side-section" id="vertex-section" hidden><span class="eyebrow">03 / EDIT VERTICES</span><h3>Move an individual corner</h3><p class="vertex-help">Choose a point, then drag its coloured marker. Each corner moves independently. X/Y/Z are coordinates within the solid (before rotation and translation).</p><label class="three-number-row"><span>Drag plane</span><select id="vertex-plane" aria-label="Vertex dragging plane"><option value="screen">Screen-facing</option><option value="xy">XY · keep Z</option><option value="xz">XZ · keep Y</option><option value="yz">YZ · keep X</option></select></label><label class="three-number-row"><span>Selected point</span><select id="vertex-select" aria-label="Selected vertex"><option value="0">A · vertex 1</option><option value="1">B · vertex 2</option><option value="2">C · vertex 3</option><option value="3">D · vertex 4</option></select></label><div class="three-triple vertex-triple"><label>X<input type="number" data-vertex-coordinate="0" step="0.1"></label><label>Y<input type="number" data-vertex-coordinate="1" step="0.1"></label><label>Z<input type="number" data-vertex-coordinate="2" step="0.1"></label></div><button type="button" class="reflect-button" id="vertex-undo" disabled>↶ Undo point edit</button><p class="vertex-status" id="vertex-status" role="status">A tetrahedron has four genuine movable corners.</p></div>'+
     '<div class="side-section"><span class="eyebrow">04 / DIMENSIONS</span><div id="solid-dimensions"></div><label class="three-number-row"><span>Uniform scale</span><input type="number" id="solid-scale" min="0.2" max="4" step="0.05" value="1"></label></div>'+
     '<div class="side-section"><span class="eyebrow">05 / POSITION & ROTATION</span><div id="solid-transform-inputs"></div><button type="button" class="reflect-button" id="solid-reset">↺ Reset solid</button></div>'+
     '<div class="side-section settings three-settings"><span class="eyebrow">06 / DISPLAY</span><label class="switch-row"><span>Coordinate grid</span><input id="three-grid" type="checkbox" checked><span class="switch"></span></label><label class="three-number-row"><span>Surface</span><select id="three-view"><option value="solid">Solid</option><option value="transparent">Transparent</option><option value="wireframe">Wireframe</option></select></label></div>';
   mathHost.innerHTML='<div class="right-top"><span class="eyebrow">THE MATHEMATICS · 3D</span><div class="live-status"><span class="live-dot"></span> Live</div></div><h2 id="solid-math-title"></h2><p class="right-intro">Measurements come from the parameters used to construct this solid.</p><div class="metric-grid" id="solid-metrics"></div>'+
-    '<div class="math-section"><div class="section-rule"><span class="eyebrow">UNDER THE HOOD</span><span class="rule"></span></div><div id="solid-formula"></div></div>'+
+    '<section id="solid-net-math" class="net-math" hidden aria-label="Live unfolded net mathematics"></section><div class="math-section"><div class="section-rule"><span class="eyebrow">UNDER THE HOOD</span><span class="rule"></span></div><div id="solid-formula"></div></div>'+
     '<div class="math-section"><div class="section-rule"><span class="eyebrow">WHAT CHANGES?</span><span class="rule"></span></div><div class="discovery" id="solid-discovery"></div></div>'+
     '<button type="button" class="copy-button" id="solid-copy">⧉ Copy 3D measurements</button><p class="rounding-note">Lengths: u · area: u² · volume: u³. Calculations use full precision.</p>';
 
   const picker=toolsHost.querySelector('#solid-picker'), dimensions=toolsHost.querySelector('#solid-dimensions');
   picker.innerHTML=Object.entries(SOLIDS).map(([key,v])=>'<button type="button" class="shape-option" data-solid="'+key+'" aria-pressed="false"><span class="shape-icon">'+v.symbol+'</span><span><strong>'+v.name+'</strong><small>'+v.fields.join(' · ')+'</small></span><span class="chevron">›</span></button>').join('');
-  const names={orbit:'Orbit',edit:'Edit points',resize:'Resize',move:'Move',rotate:'Rotate',scale:'Scale'};
+  const names={orbit:'Orbit',edit:'Edit points',net:'Unfold net',resize:'Resize',move:'Move',rotate:'Rotate',scale:'Scale'};
   toolsHost.querySelector('.three-modes').innerHTML=Object.entries(names).map(([k,n])=>'<button type="button" data-mode="'+k+'" aria-pressed="false">'+n+'</button>').join('');
 
   function mode(){
     toolsHost.querySelectorAll('[data-mode]').forEach(b=>{
       const on=b.dataset.mode===s.mode;
-      b.disabled=b.dataset.mode==='edit'&&s.type!=='tetrahedron';
-      b.title=b.disabled?'Independent points are available on the tetrahedron':b.textContent;
+      b.disabled=(b.dataset.mode==='edit'&&s.type!=='tetrahedron')||
+        (b.dataset.mode==='net'&&!supportsBoxNet(s.type));
+      b.title=b.dataset.mode==='net'&&!supportsBoxNet(s.type)
+        ?'Folding nets currently support the cube and cuboid'
+        :b.dataset.mode==='edit'&&b.disabled
+          ?'Independent points are available on the tetrahedron':b.textContent;
       b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));
     });
     toolsHost.querySelector('#vertex-section').hidden=s.type!=='tetrahedron'||s.mode!=='edit';
+    toolsHost.querySelector('#net-section').hidden=s.mode!=='net'||!supportsBoxNet(s.type);
+    grid.visible=axes.visible=toolsHost.querySelector('#three-grid').checked&&s.mode!=='net';
+    setNetProgress(s.netProgress);
     toolsHost.querySelector('#three-mode-hint').textContent=({
       orbit:'Left-drag to orbit, right-drag to pan; scroll or pinch to zoom.',
       edit:'Drag a vertex marker to change the actual tetrahedron; choose XY/XZ/YZ to control depth.',
+      net:'Orbit the connected faces while they unfold. Use the slider or Fold / Unfold buttons.',
       resize:'Drag the coloured handles to change dimensions.',
       move:'Drag the solid to translate without changing its volume.',
       rotate:'Drag the solid to change orientation, not its volume.',
       scale:'Drag the solid sideways: area changes quadratically, volume cubically.'
     })[s.mode];
-    orbit.enabled=s.mode==='orbit'&&!s.drag;
-    canvasHost.querySelector('.three-canvas-bottom > span').textContent=s.mode==='edit'?'Drag a coloured corner · Change the drag plane for depth · Use X/Y/Z for precision':'Drag to orbit · Scroll or pinch to zoom · Right-drag to pan';
-    renderer.domElement.style.cursor=s.mode==='orbit'?'grab':'crosshair';
+    orbit.enabled=(s.mode==='orbit'||s.mode==='net')&&!s.drag;
+    canvasHost.querySelector('.three-canvas-bottom > span').textContent=s.mode==='net'?'Orbit the folding net · Scrub the progress slider · Change face dimensions on the left':s.mode==='edit'?'Drag a coloured corner · Change the drag plane for depth · Use X/Y/Z for precision':'Drag to orbit · Scroll or pinch to zoom · Right-drag to pan';
+    renderer.domElement.style.cursor=s.mode==='orbit'||s.mode==='net'?'grab':'crosshair';
     repaint();
   }
   function dimensionControls(){
@@ -151,11 +210,16 @@ export function mount3D({canvasHost,toolsHost,mathHost}) {
     }
   }
   function cleanupMesh(){
+    if(netAssembly){object.remove(netAssembly.group);netAssembly.dispose();netAssembly=null;}
     for(const part of [solid,edges,...handles])if(part){object.remove(part);part.geometry?.dispose();part.material?.dispose();}
     solid=null;edges=null;handles=[];
   }
   function draw(){
     cleanupMesh();
+    if(s.mode==='net'&&supportsBoxNet(s.type)){
+      netAssembly=createFoldingBox(s.type,s.params,s.netProgress,s.netFace);
+      object.add(netAssembly.group);
+    }else{
     const g=s.type==='tetrahedron'&&s.vertices?poly(s.vertices,TETRA_FACES):geometryFor(s.type,s.params);
     const material=s.view==='wireframe'?
       new THREE.MeshBasicMaterial({color:0x666bdc,wireframe:true,side:THREE.DoubleSide}):
@@ -179,16 +243,30 @@ export function mount3D({canvasHost,toolsHost,mathHost}) {
         handles.push(dot);object.add(dot);
       });
     }
+    }
     object.position.fromArray(s.position);object.rotation.set(...s.rotation);object.scale.setScalar(s.scale);
     repaint();
   }
   function maths(){
     const m=currentMeasurement();
-    mathHost.querySelector('.right-intro').textContent=s.type==='tetrahedron'?'The measured tetrahedron uses its actual corner coordinates, even after deformation.':'Measurements come from the dimensions used to construct this solid.';
+    mathHost.querySelector('.right-intro').textContent=s.mode==='net'?'A closed solid and its unfolded net have exactly the same total surface area. The flat net does not enclose volume.':s.type==='tetrahedron'?'The measured tetrahedron uses its actual corner coordinates, even after deformation.':'Measurements come from the dimensions used to construct this solid.';
     mathHost.querySelector('#solid-math-title').textContent=m.name;
     const card=(k,v,u,accent)=>'<div class="metric-card'+(accent?' purple':'')+'"><span class="metric-label">'+k+'</span><span class="metric-value">'+v+'<span class="metric-unit">'+u+'</span></span></div>';
-    mathHost.querySelector('#solid-metrics').innerHTML=card('Volume',fmt(m.volume),'u³',true)+card('Surface area',fmt(m.surfaceArea),'u²')+
+    mathHost.querySelector('#solid-metrics').innerHTML=card(s.mode==='net'?'Volume when folded':'Volume',fmt(m.volume),'u³',true)+card('Surface area',fmt(m.surfaceArea),'u²')+
       (m.topology?card('Vertices / edges',m.topology[0]+' / '+m.topology[1],'')+card('Faces',String(m.topology[2]),''):card('Classification','Curved',''));
+    const netMath=mathHost.querySelector('#solid-net-math');
+    netMath.hidden=s.mode!=='net'||!supportsBoxNet(s.type);
+    if(!netMath.hidden){
+      const net=boxNet(s.type,s.params,s.scale);
+      const areaOK=netMatchesSurfaceArea(net,m.surfaceArea);
+      const selected=net.faces.find(f=>f.id===s.netFace)||net.faces[0];
+      netMath.innerHTML='<div class="section-rule"><span class="eyebrow">THE FLAT NET · 6 FACES</span><span class="rule"></span></div>'+
+        '<p class="net-lead">A genuine connected arrangement of six rectangles. Select a face to highlight the same surface in 3D.</p>'+
+        '<div class="net-preview">'+netPreviewSvg(net)+'</div>'+
+        '<div class="net-faces">'+net.faces.map(f=>'<button type="button" data-net-face="'+f.id+'" class="net-face-row'+(f.id===s.netFace?' chosen':'')+'"><span class="net-face-dot" style="background:'+f.color+'"></span><span>'+f.label+'</span><strong>'+fmt(f.area)+' u²</strong></button>').join('')+'</div>'+
+        '<div class="net-equation"><span>Sum of the 6 faces</span><strong>'+net.faces.map(f=>fmt(f.area)).join(' + ')+' = '+fmt(net.area)+' u²</strong><small>'+ (areaOK?'✓ Equals the solid’s surface area':'Check failed: area mismatch') +'</small></div>'+
+        '<p class="net-lead">Selected: <strong>'+selected.label+'</strong> · '+fmt(selected.width)+' × '+fmt(selected.height)+' = '+fmt(selected.area)+' u². Folding changes the angles between faces, never their areas.</p>';
+    }
     const rows=[...m.detail,['Centre position','('+s.position.map(fmt).join(', ')+')']];
     if(m.topology)rows.push(["Euler's formula",m.topology[0]+' − '+m.topology[1]+' + '+m.topology[2]+' = '+m.euler]);
     else rows.push(['Euler rule','Polyhedra only']);
@@ -204,11 +282,12 @@ export function mount3D({canvasHost,toolsHost,mathHost}) {
     update();
   }
   function choose(type){
-    stopDrag();
+    stopDrag();stopNetAnimation();
     Object.assign(s,initialSolid(type));
     s.vertices=type==='tetrahedron'?canonicalTetrahedron(s.params.side):null;
-    s.selectedVertex=0;s.undoVertices=null;
+    s.selectedVertex=0;s.undoVertices=null;s.netProgress=0;s.netFace='front';
     if(s.mode==='edit'&&type!=='tetrahedron')s.mode='orbit';
+    if(s.mode==='net'&&!supportsBoxNet(type))s.mode='orbit';
     s.observation=type==='cube'?'Resize just one edge: a cube becomes a cuboid. Doubling every edge multiplies volume by 8.':type==='sphere'?'Doubling radius quadruples area and multiplies volume by 8.':'Change a dimension and compare its effect on volume and surface area.';
     picker.querySelectorAll('button').forEach(b=>{const on=b.dataset.solid===s.type;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});
     dimensionControls();transformControls();mode();update();
@@ -216,7 +295,20 @@ export function mount3D({canvasHost,toolsHost,mathHost}) {
   picker.addEventListener('click',e=>{const b=e.target.closest('[data-solid]');if(b)choose(b.dataset.solid);});
   toolsHost.querySelector('.three-modes').addEventListener('click',e=>{
     const b=e.target.closest('[data-mode]');if(!b||b.disabled)return;
-    stopDrag();s.mode=b.dataset.mode;mode();update();
+    stopDrag();stopNetAnimation();s.mode=b.dataset.mode;
+    if(s.mode==='net')showNetCamera();
+    mode();update();
+  });
+  toolsHost.querySelector('#net-fold').addEventListener('click',()=>animateNet(0));
+  toolsHost.querySelector('#net-unfold').addEventListener('click',()=>animateNet(1));
+  toolsHost.querySelector('#net-slider').addEventListener('input',e=>{
+    stopNetAnimation();setNetProgress(Number(e.target.value)/100);
+  });
+  mathHost.querySelector('#solid-net-math').addEventListener('click',e=>{
+    const button=e.target.closest('[data-net-face]');
+    if(!button||s.mode!=='net')return;
+    s.netFace=button.dataset.netFace;
+    netAssembly?.setHighlight(s.netFace);maths();repaint();
   });
   toolsHost.querySelector('#vertex-plane').addEventListener('change',e=>{s.vertexPlane=e.target.value;});
   toolsHost.querySelector('#vertex-select').addEventListener('change',e=>{s.selectedVertex=+e.target.value;update();});
@@ -257,7 +349,7 @@ export function mount3D({canvasHost,toolsHost,mathHost}) {
     change(()=>{s[kind][i]=kind==='rotation'?v*Math.PI/180:v;},kind==='rotation'?'rotate':'move');
   });
   toolsHost.querySelector('#three-view').addEventListener('change',e=>{s.view=e.target.value;draw();});
-  toolsHost.querySelector('#three-grid').addEventListener('change',e=>{grid.visible=e.target.checked;axes.visible=e.target.checked;repaint();});
+  toolsHost.querySelector('#three-grid').addEventListener('change',e=>{grid.visible=axes.visible=e.target.checked&&s.mode!=='net';repaint();});
   toolsHost.querySelector('#solid-reset').addEventListener('click',()=>choose(s.type));
   mathHost.querySelector('#solid-copy').addEventListener('click',async()=>{
     const m=currentMeasurement();
@@ -274,7 +366,7 @@ export function mount3D({canvasHost,toolsHost,mathHost}) {
     pick(e);return ray.ray.intersectPlane(plane,intersection)?intersection.clone():null;
   }
   function down(e){
-    if(s.mode==='orbit'||(e.pointerType==='mouse'&&e.button!==0))return;
+    if(s.mode==='orbit'||s.mode==='net'||(e.pointerType==='mouse'&&e.button!==0))return;
     pick(e);
     const hit=(s.mode==='resize'||s.mode==='edit'?ray.intersectObjects(handles):ray.intersectObject(solid))[0];
     if(!hit)return;
@@ -347,8 +439,8 @@ export function mount3D({canvasHost,toolsHost,mathHost}) {
   renderer.domElement.addEventListener('lostpointercapture',()=>{s.drag=null;});
   const observer=new ResizeObserver(fit);observer.observe(canvas);
   mode();choose('cube');
-  function setActive(value){s.active=value;s.drag=null;if(value)fit();else if(frame){cancelAnimationFrame(frame);frame=0;}}
-  function dispose(){stopDrag();setActive(false);observer.disconnect();orbit.dispose();cleanupMesh();axes.geometry.dispose();axes.material.dispose();grid.geometry.dispose();grid.material.dispose();renderer.dispose();}
+  function setActive(value){s.active=value;s.drag=null;if(!value)stopNetAnimation();if(value)fit();else if(frame){cancelAnimationFrame(frame);frame=0;}}
+  function dispose(){stopDrag();stopNetAnimation();setActive(false);observer.disconnect();orbit.dispose();cleanupMesh();axes.geometry.dispose();axes.material.dispose();grid.geometry.dispose();grid.material.dispose();renderer.dispose();}
   window.addEventListener('pagehide',dispose,{once:true});
   return {setActive,dispose};
 }

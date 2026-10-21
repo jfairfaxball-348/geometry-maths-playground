@@ -53,7 +53,7 @@ function show(mode) {
   right3d.hidden = !is3d;
   stage3d.hidden = !is3d;
   current.title.innerHTML = is3d ? 'Shape space. <em>Explore in depth.</em>' : 'Move things. <em>Discover why.</em>';
-  current.intro.textContent = is3d ? 'Orbit to inspect; switch to Resize to drag a dimension handle.' : 'Drag a coloured point to reshape. Drag inside the shape to move it.';
+  current.intro.textContent = is3d ? 'Orbit a solid, unfold its connected faces into a net, or resize its dimensions.' : 'Drag a coloured point to reshape. Drag inside the shape to move it.';
   three?.setActive(is3d);
 }
 

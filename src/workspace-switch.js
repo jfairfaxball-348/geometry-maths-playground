@@ -10,7 +10,7 @@ stageHeading.prepend(header);
 const current = {
   left: document.querySelector('.left-panel'),
   right: document.querySelector('.right-panel'),
-  canvas: document.getElementById('geometry-canvas'),
+  canvasWrap: document.querySelector('.canvas-wrap'),
   bar: document.querySelector('.canvas-bar'),
   bottom: document.querySelector('.canvas-bottom'),
   note: document.querySelector('.stage-note'),
@@ -24,7 +24,8 @@ const stage3d = document.createElement('div');
 stage3d.id = 'three-stage';
 stage3d.className = 'three-stage';
 stage3d.hidden = true;
-current.canvas.after(stage3d);
+// Both workspaces occupy the same canvas-card slot; never nest the 3D view inside the SVG wrapper.
+current.canvasWrap.after(stage3d);
 const left3d = document.createElement('div');
 left3d.id = 'three-tools'; left3d.hidden = true;
 current.left.append(left3d);
@@ -42,7 +43,9 @@ function show(mode) {
   }
   current.left.classList.toggle('three-active', is3d);
   current.right.classList.toggle('three-active', is3d);
-  current.canvas.hidden = is3d;
+  // Hide the *entire* 2D canvas wrapper, not only its SVG child.
+  // This ensures the inactive diagram cannot remain visible or reserve vertical space.
+  current.canvasWrap.hidden = is3d;
   current.bar.hidden = is3d;
   current.bottom.hidden = is3d;
   current.note.hidden = is3d;

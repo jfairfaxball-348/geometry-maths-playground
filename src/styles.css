@@ -168,7 +168,11 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 14px 0 1px
   .shape-option strong { font-size: 10.5px; }
   .regular-control { padding: 12px 5px; }
   .side-section { padding: 14px 5px; }
-  .side-section:not(.settings) { display: none; }
+  .side-section:not(.settings) { display: block; }
+  .transform-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+  .action-tile { font-size: 9px; padding: 5px 2px; min-height: 48px; }
+  .reflect-button { min-height: 31px; }
+  .microcopy { display: none; }
   .settings { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; padding: 10px 5px 0; }
   .settings .eyebrow { display: none; }
   .switch-row { margin: 0; gap: 7px; font-size: 10px; }

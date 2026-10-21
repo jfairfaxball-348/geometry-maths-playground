@@ -63,7 +63,7 @@ export function createFoldingBox(type, params, progress = 0, selected = 'front')
   function setHighlight(id) {
     for(const [name,mesh] of faces) {
       mesh.material.emissive.set(name===id?0x222248:0x000000);
-      mesh.material.emissiveIntensity=name===id?.43:0;
+      mesh.material.emissiveIntensity=name===id ? 0.43 : 0;
     }
   }
   function dispose() {

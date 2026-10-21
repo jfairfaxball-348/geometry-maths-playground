@@ -46,3 +46,17 @@
 @media (max-width: 1070px) { .right-panel.three-active { display: block; } #three-math { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); column-gap: 18px; } #three-math > .right-top, #three-math > h2, #three-math > .right-intro, #three-math > .metric-grid { grid-column: 1; } #three-math > .math-section { grid-column: 2; } #three-math > .copy-button, #three-math > .rounding-note { grid-column: 1 / -1; } }
 @media (max-width: 750px) { .workspace-switch { margin-bottom: 12px; } .workspace-tab { padding: 9px 13px; } .three-shape-options { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; overflow: visible; } .three-shape-options .shape-option { min-height: 74px; width: 100%; padding: 7px; } .three-shape-options .shape-option strong { overflow-wrap: anywhere; font-size: 10px; } .three-modes { grid-template-columns: repeat(5,minmax(0,1fr)); } .three-dimension { max-width: 400px; } .three-canvas { height: clamp(360px,95vw,520px); } #three-math { display: block; } #three-math .metric-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .three-canvas-bottom { font-size: 9px; } }
 @media (max-width: 400px) { .three-shape-options { grid-template-columns: repeat(4,minmax(0,1fr)); } .three-shape-options .shape-option { padding: 5px; } .three-canvas-bottom > span { max-width: 200px; } }
+
+/* S003: genuine draggable corner and coordinate tools. */
+.three-modes button:disabled { opacity: .42; cursor: not-allowed; }
+#vertex-section { border-left: 3px solid #777be9; padding-left: 12px; }
+.vertex-help { color: #8993aa; font-size: 10.5px; line-height: 1.6; }
+#vertex-section .vertex-triple { margin-top: 17px; }
+#vertex-section .vertex-triple input { width: 100%; }
+#vertex-section #vertex-plane, #vertex-section #vertex-select { width: 132px; }
+.vertex-status { font-size: 10px; line-height: 1.6; color: #5d6687; min-height: 2.8em; margin: 12px 0 0; }
+#vertex-undo:disabled { opacity: .5; cursor: not-allowed; }
+@media (max-width: 750px) {
+  .three-modes { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  #vertex-section { padding-left: 10px; }
+}
